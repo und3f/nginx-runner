@@ -20,6 +20,12 @@ sub new {
       shift;
 }
 
+sub DESTROY {
+    my $self = shift;
+
+    $self->stop if $self->is_running;
+}
+
 sub proxy {
     my ($self, $src, $dst, @args) = @_;
 

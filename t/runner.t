@@ -14,20 +14,20 @@ describe 'Nginx::Runner' => sub {
 
         my $port_dst = &gen_port;
 
-        my $socket = IO::Socket::INET->new(
-            LocalAddr => '127.0.0.1',
-            LocalPort => $port_dst,
-            Listen    => 1,
-        );
+        unless (fork) {
+            my $socket = IO::Socket::INET->new(
+                LocalAddr => '127.0.0.1',
+                LocalPort => $port_dst,
+                Listen    => 1,
+            );
+
+            simple_http_client($socket->accept);
+            exit 0;
+        }
 
         my $port_src = &gen_port;
 
         $nginx->proxy("127.0.0.1:$port_src" => "127.0.0.1:$port_dst")->run;
-
-        unless (fork) {
-            simple_http_client($socket->accept);
-            exit 0;
-        }
 
         my $response = LWP::UserAgent->new->get("http://127.0.0.1:$port_src");
 
