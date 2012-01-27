@@ -8,9 +8,17 @@ Nginx::Runner - run nginx proxy server
 
     my $nginx = Nginx::Runner->new;
 
-    $nginx->proxy("127.0.0.1:8080" => "127.0.0.1:3000")->run;
+    $nginx->proxy("127.0.0.1:8080" => "127.0.0.1:3000")->proxy(
+        "https://127.0.0.1:8443" => "127.0.0.1:3000",
+        [ssl_certificate     => "/etc/ssl/nginx/nginx.pem"],
+        [ssl_certificate_key => "/etc/ssl/nginx/nginx.pem"]
+    )->run;
 
-    $SIG{INT} = sub {$nginx->stop};
+    $SIG{INT} = sub { $nginx->stop };
+
+    print "Server available at ",
+      "http://127.0.0.1:8080 and https://127.0.0.1:8443\n";
+
     sleep;
 
 =head1 COPYRIGHT AND LICENSE
