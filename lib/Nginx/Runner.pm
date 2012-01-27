@@ -9,6 +9,9 @@ our $VERSION = '0.0000001';
 use Nginx::Runner::Config;
 use File::Temp;
 use Time::HiRes 'usleep';
+use IPC::Open3 'open3';
+
+require Carp;
 
 sub new {
     bless {
@@ -29,10 +32,20 @@ sub DESTROY {
 sub proxy {
     my ($self, $src, $dst, @args) = @_;
 
+    if (my ($proto, $address) = ($src =~ m{^(\w+)://(.+?)(/.+)?$})) {
+        if ($proto eq 'http') {
+            $src = $address;
+        }
+        elsif ($proto eq 'https') {
+            $src = $address;
+            push @args, [ssl => 'on'];
+        }
+    }
+
     push @{$self->{servers}},
       [ server => [
             [listen   => $src],
-            [location => '/' => [[proxy_pass => "http://$dst"], @args]]
+            [location => '/' => [[proxy_pass => "http://$dst"]]], @args
         ]
       ];
 
@@ -63,11 +76,19 @@ sub run {
     $conf_fh->print(Nginx::Runner::Config::encode($config));
     $conf_fh->close;
 
-    my $res = system($self->{nginx_bin}, '-c' => $conf_fn);
-    die "Unable to run nginx" if $res;
+    my ($stdout, $stderr);
 
-    my $pid;
-    while (!($pid = <$pid_fh>)) { usleep 100; }
+    my $pid =
+      open3(undef, $stdout, undef, $self->{nginx_bin} . " -c $conf_fn");
+    waitpid($pid, 0);
+
+    if ($?) {
+        my @stdout = <$stdout>;
+        die "Unable to run nginx: $stdout[-1]" if $?;
+    }
+
+    undef $pid;
+    while (!($pid = <$pid_fh>)) { usleep 50; }
     $pid_fh->close;
 
     $self->{pid} = $pid;
