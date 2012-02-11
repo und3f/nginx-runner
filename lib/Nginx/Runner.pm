@@ -14,13 +14,15 @@ use IPC::Open3 'open3';
 require Carp;
 
 sub new {
+    my ($class, @args) = @_;
+
     bless {
         nginx_bin  => "/usr/sbin/nginx",
         error_log  => "/tmp/nginx.error",
         access_log => "/tmp/nginx.access",
-        servers    => []
-      },
-      shift;
+        servers    => [],
+        @args
+    }, $class;
 }
 
 sub DESTROY {
@@ -113,11 +115,15 @@ Nginx::Runner - run nginx proxy server
 
     my $nginx = Nginx::Runner->new;
 
-    $nginx->proxy("127.0.0.1:8080" => "127.0.0.1:3000")->proxy(
+    $nginx->proxy("127.0.0.1:8080" => "127.0.0.1:3000");
+    
+    $nginx->proxy(
         "https://127.0.0.1:8443" => "127.0.0.1:3000",
         [ssl_certificate     => "/etc/ssl/nginx/nginx.pem"],
         [ssl_certificate_key => "/etc/ssl/nginx/nginx.pem"]
-    )->run;
+    );
+    
+    $nginx->run;
 
     $SIG{INT} = sub { $nginx->stop };
 

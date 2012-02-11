@@ -8,10 +8,20 @@ use File::Temp;
 
 use_ok 'Nginx::Runner';
 
+my @paths =
+  ($ENV{NGINX_PATH} || '', '/usr/sbin/nginx', '/usr/local/bin/nginx');
+
+my $nginx_bin;
+foreach my $path (@paths) {
+    if (-x $path) {
+        $nginx_bin = $path;
+        last;
+    }
+}
 
 describe 'Nginx::Runner' => sub {
     it "should proxy http request" => sub {
-        my $nginx = new_ok 'Nginx::Runner';
+        my $nginx = new_ok 'Nginx::Runner', [nginx_bin => $nginx_bin];
 
         my $port_dst = &fork_simple_http_client;
         my $port_src = &gen_port;
@@ -27,7 +37,7 @@ describe 'Nginx::Runner' => sub {
     };
 
     it "should proxy https requests" => sub {
-        my $nginx = new_ok 'Nginx::Runner';
+        my $nginx = new_ok 'Nginx::Runner', [nginx_bin => $nginx_bin];
 
         my $port_dst = &fork_simple_http_client;
 
@@ -49,7 +59,12 @@ describe 'Nginx::Runner' => sub {
     };
 };
 
-runtests unless caller;
+unless ($nginx_bin) {
+    plan skip_all => 'Nginx not found, set $NGINX_PATH';
+}
+else {
+    runtests unless caller;
+}
 
 sub gen_port {
     my $socket = IO::Socket::INET->new(LocalAddr => '127.0.0.1');
