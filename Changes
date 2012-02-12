@@ -1,4 +1,7 @@
 Revision history for Perl extension Nginx::Runner
 
+0.000001_2 12.02.2012 00:00:00
+         - test fixed
+
 0.000001_1 20.01.2012 00:00:00
          - first release

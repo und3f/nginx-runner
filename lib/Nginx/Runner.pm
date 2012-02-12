@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use 5.008_001;
 
-our $VERSION = '0.000001_1';
+our $VERSION = '0.000001_2';
 
 use Nginx::Runner::Config;
 use File::Temp;

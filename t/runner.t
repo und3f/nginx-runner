@@ -6,8 +6,6 @@ use IO::Socket::INET;
 use LWP::UserAgent;
 use File::Temp;
 
-use_ok 'Nginx::Runner';
-
 my @paths =
   ($ENV{NGINX_PATH} || '', '/usr/sbin/nginx', '/usr/local/bin/nginx');
 
@@ -17,6 +15,13 @@ foreach my $path (@paths) {
         $nginx_bin = $path;
         last;
     }
+}
+
+unless ($nginx_bin) {
+    plan skip_all => 'Nginx not found, set $NGINX_PATH';
+}
+else {
+    use_ok 'Nginx::Runner';
 }
 
 describe 'Nginx::Runner' => sub {
@@ -59,12 +64,7 @@ describe 'Nginx::Runner' => sub {
     };
 };
 
-unless ($nginx_bin) {
-    plan skip_all => 'Nginx not found, set $NGINX_PATH';
-}
-else {
-    runtests unless caller;
-}
+runtests if !caller && $nginx_bin;
 
 sub gen_port {
     my $socket = IO::Socket::INET->new(LocalAddr => '127.0.0.1');
